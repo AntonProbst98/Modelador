@@ -1,10 +1,11 @@
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { levelFloorY, plinthRects } from "../model/geometry";
 import { PAL, ROOM_COLORS } from "../model/palette";
 import { LEVEL_DEFAULTS, type Level, type Rect, type Room } from "../model/types";
+import { buildWallPieces, type WallPiece } from "../model/walls";
 import { getArcMaterial, getHighlightMaterial, getMaterial } from "./materials";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
@@ -34,36 +35,54 @@ function Slab({
 }
 
 /**
- * Muros. Todo el grupo se escala en Y desde el nivel de piso, así que subir o
- * bajar los muros es animar un solo nodo en vez de cientos de mallas.
+ * Muros, ya partidos en pedazos por `buildWallPieces`.
+ *
+ * "Muros bajos" no encoge la casa: corta la sección a una altura. Cada pedazo se
+ * dibuja hasta donde llega el corte y desaparece si queda por encima, que es
+ * como se lee un plano y además deja ver dónde arranca cada ventana.
  */
-function Walls({ rects, floorY, height }: { rects: Rect[]; floorY: number; height: number }) {
-  const group = useRef<THREE.Group>(null);
-  const current = useRef(height);
-  const material = getMaterial(PAL.wall, 1, 0.95);
+function Walls({ pieces, floorY, cut }: { pieces: WallPiece[]; floorY: number; cut: number }) {
+  const meshes = useRef<(THREE.Mesh | null)[]>([]);
+  const current = useRef(cut);
+  meshes.current.length = pieces.length;
+
+  const wallMat = getMaterial(PAL.wall, 1, 0.95);
+  const glassMat = getMaterial(PAL.glass, 0.34, 0.12);
 
   useFrame((_, delta) => {
-    const g = group.current;
-    if (!g) return;
-    // Igual que la cámara: suavizado por tiempo para que no dependa del frame rate.
-    current.current += (height - current.current) * (1 - Math.exp(-8 * Math.min(delta, 0.1)));
-    g.scale.y = Math.max(current.current, 0.0001);
-    g.visible = current.current > 0.02;
+    current.current += (cut - current.current) * (1 - Math.exp(-8 * Math.min(delta, 0.1)));
+    const c = current.current;
+    for (let i = 0; i < pieces.length; i++) {
+      const mesh = meshes.current[i];
+      const piece = pieces[i];
+      if (!mesh || !piece) continue;
+      const height = Math.min(piece.top, c) - piece.bottom;
+      mesh.visible = height > 0.005;
+      if (!mesh.visible) continue;
+      mesh.scale.y = height;
+      mesh.position.y = floorY - 0.03 + piece.bottom + height / 2;
+    }
   });
 
   return (
-    <group ref={group} position={[0, floorY - 0.03, 0]}>
-      {rects.map(([x1, z1, x2, z2], i) => (
-        <mesh
-          key={i}
-          position={[(x1 + x2) / 2, 0.5, (z1 + z2) / 2]}
-          material={material}
-          castShadow
-          receiveShadow
-        >
-          <boxGeometry args={[Math.max(x2 - x1, 0.02), 1, Math.max(z2 - z1, 0.02)]} />
-        </mesh>
-      ))}
+    <group>
+      {pieces.map((piece, i) => {
+        const [x1, z1, x2, z2] = piece.rect;
+        return (
+          <mesh
+            key={i}
+            ref={(el) => {
+              meshes.current[i] = el;
+            }}
+            position={[(x1 + x2) / 2, floorY, (z1 + z2) / 2]}
+            material={piece.glass ? glassMat : wallMat}
+            castShadow={!piece.glass}
+            receiveShadow
+          >
+            <boxGeometry args={[Math.max(x2 - x1, 0.02), 1, Math.max(z2 - z1, 0.02)]} />
+          </mesh>
+        );
+      })}
     </group>
   );
 }
@@ -141,6 +160,7 @@ export function Structure({
   const floorY = levelFloorY(level);
   const thickness = level.floorThickness ?? LEVEL_DEFAULTS.floorThickness;
   const base = level.elevation ?? LEVEL_DEFAULTS.elevation;
+  const pieces = useMemo(() => buildWallPieces(level), [level]);
 
   return (
     <group>
@@ -175,7 +195,7 @@ export function Structure({
         />
       ))}
 
-      <Walls rects={[...level.extWalls, ...level.intWalls]} floorY={floorY} height={wallHeight} />
+      <Walls pieces={pieces} floorY={floorY} cut={wallHeight} />
       <DoorSwings swings={level.doorSwings} floorY={floorY} />
     </group>
   );

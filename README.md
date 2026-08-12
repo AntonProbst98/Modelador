@@ -35,6 +35,11 @@ Agregar una casa no toca el motor, y cambiar el motor mejora todas las casas.
 - **Cuartos**: a paño interior. Su área y sus medidas se calculan — nunca se
   escriben a mano, para que la leyenda no pueda contradecir al modelo.
 - **Muebles**: el frente mira a `-z` cuando `rot = 0`; `rot` va en grados.
+- **Ventanas** (`openings`): se dibujan encima del muro y `model/walls.ts` lo
+  recorta en antepecho, panel opaco, vidrio y dintel. El espesor se hereda del
+  muro, así que basta con que el rectángulo lo pise.
+- **Muros bajos** no encoge la casa: corta la sección a 1.05 m, así se ve a qué
+  altura arranca cada ventana.
 
 ## Agregar una propiedad
 

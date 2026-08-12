@@ -3,6 +3,26 @@
  *
  * Sistema de ejes del levantamiento: x = 0..9.6 (frente, izq→der del croquis),
  * z = 0..11 (fondo). Todo en metros, a paño de muro.
+ *
+ * ─── MEDIDAS TOMADAS EN SITIO, PENDIENTES DE CONCILIAR ───────────────────────
+ *
+ * Ya aplicadas:
+ *   · Altura de entrepiso        2.60
+ *   · Corrediza cuarto Antón     2.45–2.50 de ancho
+ *
+ * Sin aplicar, porque contradicen el croquis y entre ellas no cierran:
+ *   · Cocina                     5.00 × 2.60
+ *   · Comedor                    5.95–6.00 × 4.70–4.80
+ *   · Pasillo                    2.00
+ *   · Columna del pasillo        0.12 × 1.34, arranca a 0.95
+ *   · La cocina invade pasillo: las puertas de Antón y del principal dan AL
+ *     PASILLO, no a la cocina.
+ *   · Existe una sala de TV además del comedor.
+ *
+ * El fondo del depto es 11.00, pero la fila terraza (2.29) + Antón (2.95) +
+ * cocina (2.60) + comedor (4.75) suma 12.59. Falta saber qué va lado a lado en
+ * vez de en fila antes de redibujar; ver los comentarios de `rooms`.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import type { Property, Rect } from "../model/types";
@@ -79,15 +99,26 @@ const rooms = [
     labelScale: 0.58,
   },
   {
-    id: "sala",
-    name: "Sala · Comedor",
+    id: "comedor",
+    name: "Comedor",
     kind: "living" as const,
     rects: [
-      [0.16, 7.5, 9.44, 9.84],
+      [0.16, 7.5, 6.95, 9.84],
       [0.16, 9.84, 6.9, 10.84],
     ] as Rect[],
-    labelAt: [4.6, 9.5] as [number, number],
-    labelScale: 0.95,
+    labelAt: [3.5, 9.3] as [number, number],
+    labelScale: 0.9,
+  },
+  {
+    // El "cuadro medio cortado" pegado al baño de visitas: lo recorta la esquina
+    // en L del edificio. La columna del pasillo es lo que lo separa del comedor.
+    id: "sala-tv",
+    name: "Sala de TV",
+    kind: "living" as const,
+    rects: [[6.95, 7.5, 9.44, 9.84]] as Rect[],
+    color: "#dbc7a6",
+    labelAt: [8.2, 8.7] as [number, number],
+    labelScale: 0.6,
   },
 ];
 
@@ -102,31 +133,35 @@ const extWalls: Rect[] = [
 ];
 
 const intWalls: Rect[] = [
-  [2.2, 2.45, 5.85, 2.55], // terraza / cuarto Antón
+  [2.2, 2.45, 5.85, 2.55], // patio / cuarto Antón — la cancelería se recorta en `openings`
   [2.15, 2.45, 2.25, 5.5], // extensión + lavandería / cuarto Antón
   [0.16, 3.75, 0.5, 3.85], // extensión / lavandería (paso 0.5–1.4)
   [1.4, 3.75, 2.15, 3.85],
-  [5.85, 0.16, 5.95, 0.8], // terraza / cuarto principal (puerta 0.8–1.7)
-  [5.85, 1.7, 5.95, 2.55],
-  [5.85, 2.55, 5.95, 4.4], // Antón / vestíbulo (puerta 4.4–5.25)
-  [5.85, 5.25, 5.95, 6.2], // sigue como costado de cocina
+  [5.85, 0.16, 5.95, 2.55], // patio / cuarto principal — corrediza en todo el tramo
+  [5.85, 2.55, 5.95, 6.2], // Antón / vestíbulo: macizo, aquí NO hay puerta
   [0.16, 5.5, 0.5, 5.6], // muro medio (puerta cocina ↔ lavandería)
-  [1.3, 5.5, 5.85, 5.6],
+  [1.3, 5.5, 4.9, 5.6], // cocina / Antón — por aquí se entra al cuarto Antón
+  [5.75, 5.5, 5.85, 5.6],
   [6.9, 3.65, 9.44, 3.75], // cuarto principal / vestíbulo (puerta 5.95–6.9)
   [6.95, 3.75, 7.05, 4.5], // vestíbulo / baño ppal (puerta 4.5–5.3)
   [6.95, 5.3, 7.05, 5.5],
   [6.95, 5.5, 9.44, 5.6], // baño ppal / baño visitas
   [6.95, 6.45, 7.05, 7.4], // pasillo / baño visitas (puerta 5.6–6.45)
   [0.85, 7.4, 5.85, 7.5], // cocina / comedor (paso a la izquierda)
-  [6.95, 7.4, 9.44, 7.5], // baño visitas / comedor
+  [6.95, 7.4, 9.44, 7.5], // baño visitas / sala de TV
+  // Columna / muro de contención entre comedor y sala de TV. Sección 0.12 × 1.34
+  // confirmada; el arranque son 0.95 desde el muro del baño de visitas, pero eso
+  // no cuadra con "1.35 desde las puertas de las recámaras" — falta el croquis.
+  [6.89, 8.45, 7.01, 9.79],
 ];
 
 const thresholds: Rect[] = [
-  [5.85, 4.4, 5.95, 5.25], // cuarto Antón
+  [4.9, 5.5, 5.75, 5.6], // cocina → cuarto Antón
   [5.95, 3.65, 6.9, 3.75], // cuarto principal
   [6.95, 4.5, 7.05, 5.3], // baño principal
   [6.95, 5.6, 7.05, 6.45], // baño de visitas
-  [5.85, 0.8, 5.95, 1.7], // principal → terraza
+  [5.85, 0.16, 5.95, 2.55], // principal → patio (corrediza en todo el tramo)
+  [3.35, 2.45, 5.85, 2.55], // Antón → patio (corrediza de 2.50, desde la derecha)
   [0.5, 3.75, 1.4, 3.85], // extensión terraza → lavandería
   [0.5, 5.5, 1.3, 5.6], // lavandería → cocina
   [0.35, 10.84, 1.25, 11.0], // entrada
@@ -143,18 +178,41 @@ export const cdmx: Property = {
     {
       id: "pb",
       name: "Planta única",
+      wallHeight: 2.6,
       rooms,
       extWalls,
       intWalls,
       thresholds,
+      // Las corredizas del patio no llevan arco: no abaten.
       doorSwings: [
-        { x: 5.85, z: 5.25, r: 0.85, from: 90 }, // cuarto Antón
+        { x: 4.9, z: 5.5, r: 0.85, from: 0 }, // cocina → cuarto Antón
         { x: 6.9, z: 3.65, r: 0.9, from: 90 }, // cuarto principal
         { x: 7.05, z: 4.5, r: 0.8, from: 270 }, // baño principal
         { x: 7.05, z: 6.45, r: 0.8, from: 0 }, // baño de visitas
-        { x: 5.85, z: 1.7, r: 0.85, from: 90 }, // principal → terraza
         { x: 1.25, z: 10.84, r: 0.85, from: 90 }, // entrada
         { x: 1.3, z: 5.6, r: 0.75, from: 180 }, // cocina → lavandería
+      ],
+      openings: [
+        {
+          rect: [5.85, 0.16, 5.95, 2.55],
+          type: "door",
+          base: 0.9,
+          note: "Cuarto principal → patio. Corrediza mixta: opaco abajo, vidrio arriba.",
+        },
+        {
+          rect: [3.35, 2.45, 5.85, 2.55],
+          type: "door",
+          base: 0.9,
+          note: "Cuarto Antón → patio. 2.50 de ancho, anclada al extremo derecho.",
+        },
+        {
+          // Cubre también el tramo corto a la izquierda de la entrada; el hueco
+          // de la puerta no tiene muro, así que ahí no se recorta nada.
+          rect: [0.16, 10.84, 7.06, 11.0],
+          type: "window",
+          sill: 1.3,
+          note: "Fachada a la calle: corrida de lado a lado, mitad baja ciega.",
+        },
       ],
       plinth: [
         [-0.15, -0.15, 9.75, 10.15],
@@ -196,13 +254,13 @@ export const cdmx: Property = {
         { type: "toilet", x: 9.0, z: 6.0, room: "bano-visitas" },
         { type: "shower", x: 8.5, z: 7.0, w: 1.7, d: 0.75, room: "bano-visitas" },
 
-        // ---- sala · comedor ----
-        { type: "diningSet", x: 3.2, z: 8.9, r: 0.75, seats: 4, ring: 1.15, room: "sala" },
-        { type: "tvUnit", x: 8.2, z: 7.7, w: 1.6, d: 0.35, room: "sala" },
-        { type: "rug", x: 8.2, z: 8.75, w: 2.8, d: 2.4, c: "#d6c3a8", room: "sala" },
-        { type: "coffeeTable", x: 8.2, z: 8.55, room: "sala" },
-        { type: "sofa", x: 8.2, z: 9.3, w: 2.2, d: 0.95, room: "sala" },
-        { type: "sideboard", x: 3.0, z: 10.58, room: "sala" },
+        // ---- comedor y sala de TV ----
+        { type: "diningSet", x: 3.2, z: 8.9, r: 0.75, seats: 4, ring: 1.15, room: "comedor" },
+        { type: "tvUnit", x: 8.2, z: 7.7, w: 1.6, d: 0.35, room: "sala-tv" },
+        { type: "rug", x: 8.2, z: 8.75, w: 2.8, d: 2.4, c: "#d6c3a8", room: "sala-tv" },
+        { type: "coffeeTable", x: 8.2, z: 8.55, room: "sala-tv" },
+        { type: "sofa", x: 8.2, z: 9.3, w: 2.2, d: 0.95, room: "sala-tv" },
+        { type: "sideboard", x: 3.0, z: 10.58, room: "comedor" },
 
         // ---- vestíbulo ----
         { type: "rug", x: 6.45, z: 5.4, w: 0.6, d: 3.2, c: "#bfa287", room: "vestibulo" },
@@ -221,7 +279,7 @@ export const cdmx: Property = {
         { type: "plant", x: 0.9, z: 3.35, s: 1.0, room: "terraza" },
         { type: "plant", x: 1.8, z: 3.3, s: 0.75, room: "terraza" },
         { type: "plant", x: 0.55, z: 7.95, s: 0.95, room: "cocina" },
-        { type: "plant", x: 5.35, z: 10.3, s: 1.0, room: "sala" },
+        { type: "plant", x: 5.35, z: 10.3, s: 1.0, room: "comedor" },
       ],
     },
   ],

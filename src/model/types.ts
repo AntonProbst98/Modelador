@@ -43,6 +43,34 @@ export interface Room {
   interior?: boolean;
 }
 
+/**
+ * Hueco acristalado en un muro. Su `rect` marca el tramo en planta; el espesor
+ * se toma del muro que atraviesa, así que basta con dibujarlo sobre el muro.
+ *
+ * Alturas medidas desde el piso terminado:
+ *
+ *     head  ─────────────  dintel (por defecto, alto del muro)
+ *           ░░░ vidrio ░░░
+ *     sill+base ─────────
+ *           ███ base ████  panel opaco de la propia cancelería
+ *     sill  ─────────────  antepecho
+ *           ███ muro ████
+ *     0     ─────────────  piso
+ */
+export interface Opening {
+  rect: Rect;
+  /** `door` = se cruza a pie, así que el piso sigue; `window` = no. */
+  type: "door" | "window";
+  /** Altura del antepecho de obra. 0 = arranca del piso. */
+  sill?: number;
+  /** Altura del dintel. Por defecto, el alto del muro. */
+  head?: number;
+  /** Panel opaco de la cancelería sobre el antepecho (corrediza mixta). */
+  base?: number;
+  /** Para acordarte de qué es al leer el archivo. */
+  note?: string;
+}
+
 export interface Level {
   id: string;
   name: string;
@@ -59,6 +87,8 @@ export interface Level {
   intWalls: Rect[];
   /** Vanos: el piso continúa, el muro no. */
   thresholds: Rect[];
+  /** Ventanas y cancelería. Se recortan de los muros al armar la geometría. */
+  openings?: Opening[];
   /** Arco de abatimiento de puerta: bisagra, radio y ángulo inicial en grados. */
   doorSwings: { x: number; z: number; r: number; from: number }[];
   furniture: Furniture[];
