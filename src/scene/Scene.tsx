@@ -1,4 +1,5 @@
 import { Environment, Lightformer, OrbitControls, SoftShadows } from "@react-three/drei";
+import { EffectComposer, N8AO } from "@react-three/postprocessing";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
@@ -17,6 +18,8 @@ export interface SceneLayers {
   furniture: boolean;
   labels: boolean;
   dims: boolean;
+  /** Oclusión ambiental. Es lo más caro de la escena: se apaga en equipos flojos. */
+  ao: boolean;
 }
 
 /** Encuadre y transición de cámara. Las vistas son metas a las que se llega interpolando. */
@@ -126,20 +129,23 @@ export function Scene({
         sigue sin depender de ningún archivo externo.
       */}
       <Environment resolution={128} frames={1}>
-        <Lightformer intensity={0.32} color="#fff6ea" position={[0, 12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[24, 24, 1]} />
-        <Lightformer intensity={0.12} color="#cfd9e2" position={[-14, 5, 0]} rotation={[0, Math.PI / 2, 0]} scale={[16, 10, 1]} />
-        <Lightformer intensity={0.1} color="#f0e2cc" position={[14, 4, 8]} rotation={[0, -Math.PI / 2, 0]} scale={[16, 10, 1]} />
+        <Lightformer intensity={0.45} color="#fff6ea" position={[0, 12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[24, 24, 1]} />
+        <Lightformer intensity={0.18} color="#cfd9e2" position={[-14, 5, 0]} rotation={[0, Math.PI / 2, 0]} scale={[16, 10, 1]} />
+        <Lightformer intensity={0.15} color="#f0e2cc" position={[14, 4, 8]} rotation={[0, -Math.PI / 2, 0]} scale={[16, 10, 1]} />
         <Lightformer intensity={0.05} color="#b9ae9c" position={[0, -6, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[24, 24, 1]} />
       </Environment>
 
       {/* Penumbra: la sombra se abre con la distancia, como una sombra de verdad. */}
       <SoftShadows size={14} samples={12} focus={0.6} />
 
-      <ambientLight intensity={0.08} color="#fff4e4" />
+      {/* El degradado cielo/suelo sigue siendo la base: da forma donde la luz
+          ambiental sola aplanaría. El Environment va encima, sólo para el brillo
+          de canto y la variación direccional. */}
+      <hemisphereLight args={[0xfff7e9, 0xb7ad9c, 1.7]} />
       <primitive object={sunTarget} />
       <directionalLight
         position={[center.x + span * 0.9, span * 1.9, center.z + span * 1.0]}
-        intensity={2.2}
+        intensity={1.5}
         castShadow
         target={sunTarget}
         shadow-mapSize={[2048, 2048]}
@@ -193,6 +199,18 @@ export function Scene({
         >
           <cylinderGeometry args={[0.001, 0.14, 0.4, 20]} />
         </mesh>
+      )}
+
+      {/*
+        Oclusión ambiental. Es lo que le faltaba a la escena: sin ella la luz
+        ambiental llega igual a un rincón que a una pared abierta, y todo se lee
+        plano por muy bien iluminado que esté. Aquí es lo que despega los muebles
+        del piso y marca los encuentros de muro.
+      */}
+      {layers.ao && (
+        <EffectComposer enableNormalPass multisampling={4}>
+          <N8AO aoRadius={0.55} distanceFalloff={0.8} intensity={2.8} halfRes />
+        </EffectComposer>
       )}
 
       <CameraRig view={view} center={center} radius={radius} enabled={!dragging} />

@@ -41,6 +41,39 @@ Agregar una casa no toca el motor, y cambiar el motor mejora todas las casas.
 - **Muros bajos** no encoge la casa: corta la sección a 1.05 m, así se ve a qué
   altura arranca cada ventana.
 
+## Escenarios
+
+Una propiedad puede tener escenarios: el mismo depto con obra encima. Un
+escenario **no copia la planta** — recibe el nivel base y le aplica los cambios
+(`src/properties/cdmx-mj.ts`), así que cada corrección al levantamiento se
+propaga sola a todos.
+
+Las operaciones de `src/model/edits.ts` trabajan por **región**, no por
+coincidencia exacta de coordenadas: un muro se quita nombrando el pedazo de
+planta donde está. Eso hace que un escenario sobreviva a que el base se mueva
+unos centímetros.
+
+Se registran en `properties/index.ts` y no dentro del archivo de la propiedad,
+para que el escenario pueda importar los ejes del base sin ciclo de imports.
+
+## Luz y materiales
+
+Tres capas, en orden de cuánto aportan:
+
+1. **Oclusión ambiental** (`N8AO`) — lo que despega los muebles del piso y marca
+   los encuentros de muro. Sin ella la escena se lee plana por muy bien
+   iluminada que esté. Es lo más caro: el chip **Detalle** la apaga.
+2. **Cantos matados** (`scene/roundedBox.ts`) — bisel de 2 cm en el mobiliario.
+   Los muros y las losas siguen con caja lisa: son cientos de piezas grandes y
+   planas donde no se nota y sí se paga.
+3. **Ambiente procedural** (`Environment` + `Lightformer`) — un cielo de tres
+   paneles renderizado una sola vez a un cubemap. Da el brillo de canto sin
+   depender de ningún archivo HDR externo.
+
+El canvas va en `flat` (sin tone mapping) a propósito: se probó ACES al meter
+luz ambiental y apaga la paleta — los pisos se van a beige y el verde de la
+terraza desaparece. A cambio hay que cuidar no pasarse de intensidad.
+
 ## Editor de mobiliario
 
 El botón **Editar** vuelve el mobiliario manipulable: click para seleccionar,

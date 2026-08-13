@@ -21,6 +21,7 @@ export default function App() {
     furniture: true,
     labels: true,
     dims: false,
+    ao: true,
   });
   const [editing, setEditing] = useState(false);
   const [scenarioId, setScenarioId] = usePersistentState<string | null>("scenario", null);
@@ -88,14 +89,15 @@ export default function App() {
   return (
     <div className="app">
       {/*
-        Con luz ambiental de verdad hace falta tone mapping: sin él los blancos
-        se queman. ACES comprime los altos sin apagar la paleta, que es lo que
-        pasaba cuando la escena tenía dos luces planas.
+        `flat` = sin tone mapping. Se probó ACES al meter luz ambiental y apaga la
+        paleta: los pisos se van a beige y el verde de la terraza desaparece. Con
+        color directo hay que cuidar no pasarse de luz, pero los colores salen
+        tal cual se autoraron.
       */}
       <Canvas
         shadows
+        flat
         dpr={[1, 2]}
-        gl={{ toneMappingExposure: 1.0 }}
         camera={{ fov: 45, near: 0.1, far: 400, position: [12, 12, 20] }}
         onPointerMissed={() => {
           setSelectedRoom(null);

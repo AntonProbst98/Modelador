@@ -126,6 +126,9 @@ export function Controls({
         <Chip active={layers.dims} onClick={() => onLayers({ ...layers, dims: !layers.dims })}>
           Cotas
         </Chip>
+        <Chip active={layers.ao} onClick={() => onLayers({ ...layers, ao: !layers.ao })}>
+          Detalle
+        </Chip>
         <Chip active={editing} onClick={() => onEditing(!editing)}>
           Editar
         </Chip>
