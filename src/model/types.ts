@@ -71,6 +71,20 @@ export interface Opening {
   note?: string;
 }
 
+/**
+ * Cota: un tramo del plano con una letra, para poder cotejarlo contra la cinta.
+ * El largo NO se escribe aquí — sale del rectángulo, así que la lista de cotas
+ * siempre dice lo que el modelo realmente mide, no lo que uno quisiera.
+ */
+export interface Dimension {
+  /** Letra que se dibuja en el plano: "A", "B", … */
+  id: string;
+  /** Qué se está midiendo, en palabras. */
+  label: string;
+  /** El tramo. Su lado largo es la medida; el corto sólo le da grosor. */
+  rect: Rect;
+}
+
 export interface Level {
   id: string;
   name: string;
@@ -89,6 +103,8 @@ export interface Level {
   thresholds: Rect[];
   /** Ventanas y cancelería. Se recortan de los muros al armar la geometría. */
   openings?: Opening[];
+  /** Cotas con letra, para verificar el levantamiento con cinta en mano. */
+  dims?: Dimension[];
   /** Arco de abatimiento de puerta: bisagra, radio y ángulo inicial en grados. */
   doorSwings: { x: number; z: number; r: number; from: number }[];
   furniture: Furniture[];
@@ -98,6 +114,19 @@ export interface Level {
   entry?: { x: number; z: number; label?: string };
 }
 
+/**
+ * Un escenario: el mismo depto con obra encima. No copia la planta — recibe el
+ * nivel base y devuelve el modificado, así que cada corrección al levantamiento
+ * se propaga sola a todos los escenarios en vez de haber que aplicarla n veces.
+ */
+export interface Scenario {
+  id: string;
+  name: string;
+  /** Qué cambia, en una línea. */
+  summary?: string;
+  apply: (base: Level) => Level;
+}
+
 export interface Property {
   id: string;
   name: string;
@@ -105,6 +134,8 @@ export interface Property {
   /** Línea corta bajo el título. Si falta, se arma con las áreas calculadas. */
   subtitle?: string;
   levels: Level[];
+  /** Alternativas de obra sobre el estado actual. El base siempre es el primero. */
+  scenarios?: Scenario[];
 }
 
 /** Defaults de nivel, en un solo lugar para no repetirlos en cada propiedad. */

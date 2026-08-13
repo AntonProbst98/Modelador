@@ -32,6 +32,8 @@ export interface CatalogProps {
   djBooth: { w?: number; d?: number; h?: number };
 
   counter: { l: number; d?: number; h?: number; c?: string };
+  /** Barra: divide sin cerrar. Más alta que una barra de trabajo y con vuelo. */
+  bar: { l: number; d?: number; h?: number; c?: string };
   cooktop: { w?: number; d?: number };
   sinkTop: { w?: number; d?: number };
   fridge: { w?: number; h?: number; d?: number };
@@ -45,11 +47,15 @@ export interface CatalogProps {
   utilitySink: { w?: number; h?: number; d?: number };
 
   diningSet: { r?: number; seats?: number; ring?: number; c?: string };
+  /** Mesa rectangular con sus sillas. Para 6: dos por lado largo y una por cabecera. */
+  diningRect: { w?: number; d?: number; seats?: number; c?: string };
   roundTable: { r?: number; h?: number; c?: string };
   stool: { s?: number; c?: string };
   sofa: { w?: number; d?: number; c?: string };
   coffeeTable: { w?: number; d?: number; h?: number; c?: string };
   tvUnit: { w?: number; d?: number; tv?: number };
+  /** Mueble de TV de obra: cajones abajo, torres a los lados y hueco al centro. */
+  mediaWall: { w: number; d?: number; h?: number; tv?: number };
   sideboard: { w?: number; h?: number; d?: number; c?: string };
   lounger: { w?: number; l?: number; c?: string };
 
@@ -113,6 +119,12 @@ export const BUILDERS: Builders = {
   counter: ({ l, d = 0.55, h = 0.8, c = PAL.wood }) => [
     b(l, h, d, 0, h / 2, 0, c),
     b(l + 0.04, 0.05, d + 0.04, 0, h + 0.025, 0, PAL.counterTop),
+  ],
+
+  bar: ({ l, d = 0.6, h = 1.05, c = PAL.wood }) => [
+    // El cuerpo va retrasado para dejar vuelo del lado del comedor.
+    b(l, h, d * 0.7, 0, h / 2, -d * 0.14, c),
+    b(l + 0.06, 0.06, d + 0.1, 0, h + 0.03, 0, PAL.counterTop),
   ],
 
   cooktop: ({ w = 0.6, d = 0.5 }) => {
@@ -189,6 +201,28 @@ export const BUILDERS: Builders = {
     return parts;
   },
 
+  diningRect: ({ w = 1.8, d = 0.9, seats = 6, c = PAL.woodWarm }) => {
+    // (ax, az) apunta hacia afuera de la mesa: ahí va el respaldo.
+    const chair = (cx: number, cz: number, ax: number, az: number, ry: number): Part[] => [
+      b(0.4, 0.4, 0.4, cx, 0.2, cz, PAL.wood, { ry }),
+      b(0.4, 0.45, 0.05, cx + ax * 0.19, 0.505, cz + az * 0.19, PAL.wood, { ry }),
+    ];
+    const parts: Part[] = [b(w, 0.06, d, 0, 0.74, 0, c)];
+    for (const sx of [-1, 1])
+      for (const sz of [-1, 1])
+        parts.push(b(0.08, 0.71, 0.08, sx * (w / 2 - 0.12), 0.355, sz * (d / 2 - 0.12), PAL.woodDark));
+
+    const perSide = Math.max(1, Math.round((seats - 2) / 2));
+    for (let i = 0; i < perSide; i++) {
+      const cx = ((i + 1) / (perSide + 1) - 0.5) * w;
+      parts.push(...chair(cx, -(d / 2 + 0.32), 0, -1, 0));
+      parts.push(...chair(cx, d / 2 + 0.32, 0, 1, 180));
+    }
+    parts.push(...chair(-(w / 2 + 0.32), 0, -1, 0, 90));
+    parts.push(...chair(w / 2 + 0.32, 0, 1, 0, 90));
+    return parts;
+  },
+
   roundTable: ({ r = 0.42, h = 0.66, c = "#8d7a5f" }) => [
     cy(r, 0.05, 0, h, 0, c, { seg: 36 }),
     cy(0.05, h - 0.05, 0, (h - 0.05) / 2, 0, c, { rb: 0.09 }),
@@ -210,6 +244,19 @@ export const BUILDERS: Builders = {
     b(w * 0.88, tv, 0.05, 0, 0.42 + 0.14 + tv / 2, -d / 2 + 0.03, PAL.screen),
   ],
 
+  mediaWall: ({ w, d = 0.5, h = 2.2, tv = 1.3 }) => {
+    const tower = Math.min(0.55, w * 0.22);
+    const nicheW = w - tower * 2 - 0.08;
+    return [
+      b(w, 0.62, d, 0, 0.31, 0, PAL.woodDark), // cajonera corrida
+      b(tower, h, d, -w / 2 + tower / 2, h / 2, 0, PAL.woodDark), // torre izquierda
+      b(tower, h, d, w / 2 - tower / 2, h / 2, 0, PAL.woodDark), // torre derecha
+      // El hueco central va retrasado y más oscuro: así se lee como nicho.
+      b(nicheW, h - 0.68, d * 0.55, 0, 0.62 + (h - 0.68) / 2, d * 0.22, "#6f6152", { cast: false }),
+      b(tv, tv * 0.58, 0.05, 0, 0.62 + 0.2 + (tv * 0.58) / 2, -d / 2 + 0.06, PAL.screen),
+    ];
+  },
+
   sideboard: ({ w = 1.5, h = 0.68, d = 0.4, c = PAL.woodDark }) => [b(w, h, d, 0, h / 2, 0, c)],
 
   lounger: ({ w = 0.62, l = 1.5, c = "#c9b18a" }) => [
@@ -223,6 +270,80 @@ export const BUILDERS: Builders = {
   ],
 
   marker: ({ c = "#c2603f" }) => [cy(0.001, 0.4, 0, 0.2, 0, c, { rb: 0.14, seg: 20 })],
+};
+
+/**
+ * Con qué parámetros nace una pieza cuando la agregas desde el editor. El tipo
+ * obliga a que estén los tres tipos con parámetros requeridos; los demás salen
+ * con los defaults de su builder.
+ */
+export const NEW_PIECE_DEFAULTS: { [K in FurnitureType]: CatalogProps[K] } = {
+  block: { w: 0.8, h: 0.8, d: 0.8 },
+  rug: { w: 1.6, d: 1.2 },
+  counter: { l: 2.0 },
+  bar: { l: 2.4 },
+  mediaWall: { w: 2.4 },
+  bed: {},
+  nightstand: {},
+  wardrobe: {},
+  desk: {},
+  monitor: {},
+  djBooth: {},
+  cooktop: {},
+  sinkTop: {},
+  fridge: {},
+  vanity: {},
+  toilet: {},
+  pedestalSink: {},
+  shower: {},
+  washerStack: {},
+  utilitySink: {},
+  diningSet: {},
+  diningRect: {},
+  roundTable: {},
+  stool: {},
+  sofa: {},
+  coffeeTable: {},
+  tvUnit: {},
+  sideboard: {},
+  lounger: {},
+  plant: {},
+  marker: {},
+};
+
+/** Nombres en español para el selector del editor. */
+export const TYPE_LABELS: Record<FurnitureType, string> = {
+  bed: "Cama",
+  nightstand: "Buró",
+  wardrobe: "Clóset",
+  desk: "Escritorio",
+  monitor: "Monitor",
+  djBooth: "Cabina DJ",
+  counter: "Barra de trabajo",
+  bar: "Barra",
+  cooktop: "Parrilla",
+  sinkTop: "Tarja",
+  fridge: "Refrigerador",
+  vanity: "Mueble de lavabo",
+  toilet: "Escusado",
+  pedestalSink: "Lavabo de pedestal",
+  shower: "Regadera",
+  washerStack: "Lavadora / secadora",
+  utilitySink: "Lavadero",
+  diningSet: "Comedor redondo",
+  diningRect: "Comedor rectangular",
+  roundTable: "Mesa redonda",
+  stool: "Banco",
+  sofa: "Sofá",
+  coffeeTable: "Mesa de centro",
+  tvUnit: "Mueble de TV",
+  mediaWall: "Mueble de TV de obra",
+  sideboard: "Trinchador",
+  lounger: "Camastro",
+  plant: "Planta",
+  rug: "Tapete",
+  block: "Caja genérica",
+  marker: "Marcador",
 };
 
 /** Arma las primitivas de una pieza. Devuelve [] si el tipo no existe (dato malo, no crash). */

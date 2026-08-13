@@ -41,6 +41,17 @@ Agregar una casa no toca el motor, y cambiar el motor mejora todas las casas.
 - **Muros bajos** no encoge la casa: corta la sección a 1.05 m, así se ve a qué
   altura arranca cada ventana.
 
+## Editor de mobiliario
+
+El botón **Editar** vuelve el mobiliario manipulable: click para seleccionar,
+arrastrar para mover (se pega solo a los muros; con Shift, libre), `R` y
+`Shift+R` para girar 90°, flechas para empujar 5 cm, `Supr` para borrar.
+
+Lo editado vive en `localStorage`, no en el repo. **La fuente de verdad sigue
+siendo el archivo de la propiedad**: "Exportar al archivo" genera el bloque
+`furniture` con el formato del proyecto para pegarlo, y "Restaurar" tira la capa
+local y vuelve a lo que dice el archivo.
+
 ## Agregar una propiedad
 
 1. Copia `src/properties/tepoztlan.ts` — su encabezado es la guía de levantamiento.

@@ -128,6 +128,15 @@ export function plinthRects(level: Level, margin = 0.15): Rect[] {
   return [[box.x1 - margin, box.z1 - margin, box.x2 + margin, box.z2 + margin]];
 }
 
+/** Largo de una cota: su lado largo. El corto es sólo el grosor de la línea. */
+export const dimLength = ([x1, z1, x2, z2]: Rect) => Math.max(x2 - x1, z2 - z1);
+
+/** Punto medio de una cota, donde va la letra. */
+export const dimMid = ([x1, z1, x2, z2]: Rect): [number, number] => [
+  (x1 + x2) / 2,
+  (z1 + z2) / 2,
+];
+
 export const levelFloorY = (level: Level) =>
   (level.elevation ?? LEVEL_DEFAULTS.elevation) +
   (level.floorThickness ?? LEVEL_DEFAULTS.floorThickness);

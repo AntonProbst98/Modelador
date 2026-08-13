@@ -1,4 +1,4 @@
-import type { ViewMode } from "../scene/Scene";
+import type { SceneLayers, ViewMode } from "../scene/Scene";
 import type { Property } from "../model/types";
 
 export type WallMode = "none" | "low" | "full";
@@ -43,6 +43,10 @@ export function Controls({
   onWallMode,
   layers,
   onLayers,
+  editing,
+  onEditing,
+  scenarioId,
+  onScenario,
 }: {
   properties: Property[];
   property: Property;
@@ -53,8 +57,12 @@ export function Controls({
   onView: (v: ViewMode) => void;
   wallMode: WallMode;
   onWallMode: (m: WallMode) => void;
-  layers: { furniture: boolean; labels: boolean };
-  onLayers: (l: { furniture: boolean; labels: boolean }) => void;
+  layers: SceneLayers;
+  onLayers: (l: SceneLayers) => void;
+  editing: boolean;
+  onEditing: (v: boolean) => void;
+  scenarioId: string | null;
+  onScenario: (id: string | null) => void;
 }) {
   return (
     <div className="controls">
@@ -65,6 +73,19 @@ export function Controls({
           </Chip>
         ))}
       </div>
+
+      {property.scenarios && property.scenarios.length > 0 && (
+        <div className="chip-row">
+          <Chip active={scenarioId === null} onClick={() => onScenario(null)}>
+            Como está
+          </Chip>
+          {property.scenarios.map((sc) => (
+            <Chip key={sc.id} active={scenarioId === sc.id} onClick={() => onScenario(sc.id)}>
+              {sc.name}
+            </Chip>
+          ))}
+        </div>
+      )}
 
       {property.levels.length > 1 && (
         <div className="chip-row">
@@ -101,6 +122,12 @@ export function Controls({
         </Chip>
         <Chip active={layers.labels} onClick={() => onLayers({ ...layers, labels: !layers.labels })}>
           Etiquetas
+        </Chip>
+        <Chip active={layers.dims} onClick={() => onLayers({ ...layers, dims: !layers.dims })}>
+          Cotas
+        </Chip>
+        <Chip active={editing} onClick={() => onEditing(!editing)}>
+          Editar
         </Chip>
       </div>
     </div>
