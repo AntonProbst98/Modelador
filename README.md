@@ -69,6 +69,23 @@ Tres capas, en orden de cuánto aportan:
 3. **Ambiente procedural** (`Environment` + `Lightformer`) — un cielo de tres
    paneles renderizado una sola vez a un cubemap. Da el brillo de canto sin
    depender de ningún archivo HDR externo.
+4. **Texturas procedurales** (`scene/textures.ts`) — veta, duela, azulejo con
+   junta, trama de tela, aplanado y moteado de piedra, dibujadas en un canvas al
+   arrancar. Cero archivos.
+
+Las texturas son **en escala de grises** a propósito: entran como `map`, que
+three multiplica por el color del material. Así una sola imagen de madera sirve
+para los cinco tonos de madera de la paleta, en vez de una por color.
+
+El acabado se deduce del color (`FINISH_BY_COLOR` en `palette.ts`) porque la
+paleta ya es, de hecho, una tabla de acabados: no hay dos maderas con el mismo
+tono ni una tela del color de un azulejo. Las piezas que usan un color suelto
+pueden forzarlo con `finish`. El piso sale del uso del cuarto (`FLOOR_FINISH`):
+duela en recámaras y social, azulejo en baños, cocina y lavandería.
+
+La repetición de la textura se calcula del **tamaño real** de la pieza, no de sus
+UV: sin eso la duela mediría distinto en el comedor que en un pasillo, porque los
+UV de una caja van de 0 a 1 sin importar cuánto mida.
 
 El canvas va en `flat` (sin tone mapping) a propósito: se probó ACES al meter
 luz ambiental y apaga la paleta — los pisos se van a beige y el verde de la

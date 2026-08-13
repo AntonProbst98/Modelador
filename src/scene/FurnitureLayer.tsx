@@ -39,7 +39,7 @@ function clipPart(part: Part, cut: number): Part | null {
 function PartMesh({ part }: { part: Part }) {
   if (part.k === "sphere") {
     return (
-      <mesh position={[part.x, part.y, part.z]} material={getMaterial(part.c)} castShadow receiveShadow>
+      <mesh position={[part.x, part.y, part.z]} material={getMaterial(part.c, { finish: part.finish })} castShadow receiveShadow>
         <sphereGeometry args={[part.r, 18, 14]} />
       </mesh>
     );
@@ -51,7 +51,7 @@ function PartMesh({ part }: { part: Part }) {
       <mesh
         position={[part.x, part.y, part.z]}
         rotation={[rad(rx), rad(ry), rad(rz)]}
-        material={getMaterial(part.c, part.opacity ?? 1)}
+        material={getMaterial(part.c, { opacity: part.opacity ?? 1, finish: part.finish })}
         castShadow={part.cast !== false}
         receiveShadow
       >
@@ -65,7 +65,7 @@ function PartMesh({ part }: { part: Part }) {
       position={[part.x, part.y, part.z]}
       rotation={[0, rad(part.ry ?? 0), 0]}
       geometry={roundedBox(part.w, part.h, part.d)}
-      material={getMaterial(part.c, part.opacity ?? 1, part.opacity && part.opacity < 1 ? 0.15 : 0.9)}
+      material={getMaterial(part.c, { opacity: part.opacity ?? 1, finish: part.finish })}
       castShadow={part.cast !== false}
       receiveShadow
     />

@@ -3,12 +3,29 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { levelFloorY, plinthRects } from "../model/geometry";
-import { PAL, ROOM_COLORS } from "../model/palette";
+import { FLOOR_FINISH, PAL, ROOM_COLORS, type Finish } from "../model/palette";
 import { LEVEL_DEFAULTS, type Level, type Rect, type Room } from "../model/types";
 import { buildWallPieces, type WallPiece } from "../model/walls";
 import { getArcMaterial, getHighlightMaterial, getMaterial } from "./materials";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
+
+/**
+ * Cuántos metros cubre una repetición de la textura. Es lo que hace que la duela
+ * mida lo mismo en el comedor que en un pasillo: la repetición sale del tamaño
+ * real de la losa, no de sus UV, que van de 0 a 1 sin importar cuánto mida.
+ */
+const TEXTURE_SPAN: Partial<Record<Finish, number>> = {
+  planks: 1.2,
+  tile: 0.8,
+  stone: 1.6,
+  wood: 1.0,
+};
+
+function spanRepeat(rect: Rect, finish: Finish): [number, number] {
+  const span = TEXTURE_SPAN[finish] ?? 1;
+  return [Math.max(1, (rect[2] - rect[0]) / span), Math.max(1, (rect[3] - rect[1]) / span)];
+}
 
 /** Losa horizontal definida por su rectángulo en planta y la cota de su cara superior. */
 function Slab({
@@ -46,8 +63,8 @@ function Walls({ pieces, floorY, cut }: { pieces: WallPiece[]; floorY: number; c
   const current = useRef(cut);
   meshes.current.length = pieces.length;
 
-  const wallMat = getMaterial(PAL.wall, 1, 0.95);
-  const glassMat = getMaterial(PAL.glass, 0.34, 0.12);
+  const wallMat = getMaterial(PAL.wall, { repeat: [2, 2] });
+  const glassMat = getMaterial(PAL.glass, { opacity: 0.34 });
 
   useFrame((_, delta) => {
     current.current += (cut - current.current) * (1 - Math.exp(-8 * Math.min(delta, 0.1)));
@@ -118,7 +135,8 @@ function RoomFloor({
   selected: boolean;
   onSelect: (id: string | null) => void;
 }) {
-  const material = getMaterial(room.color ?? ROOM_COLORS[room.kind]);
+  const color = room.color ?? ROOM_COLORS[room.kind];
+  const finish = FLOOR_FINISH[room.kind];
   const highlight = getHighlightMaterial("#4a5d47");
 
   return (
@@ -136,7 +154,13 @@ function RoomFloor({
       }}
     >
       {room.rects.map((rect, i) => (
-        <Slab key={i} rect={rect} top={floorY} thickness={thickness} material={material} />
+        <Slab
+          key={i}
+          rect={rect}
+          top={floorY}
+          thickness={thickness}
+          material={getMaterial(color, { finish, repeat: spanRepeat(rect, finish) })}
+        />
       ))}
       {selected &&
         room.rects.map((rect, i) => (
@@ -170,7 +194,7 @@ export function Structure({
           rect={rect}
           top={base}
           thickness={0.12}
-          material={getMaterial(PAL.plinth)}
+          material={getMaterial(PAL.plinth, { repeat: spanRepeat(rect, "stone") })}
         />
       ))}
 
@@ -191,7 +215,7 @@ export function Structure({
           rect={rect}
           top={floorY - 0.01}
           thickness={0.07}
-          material={getMaterial(PAL.threshold)}
+          material={getMaterial(PAL.threshold, { repeat: spanRepeat(rect, "wood") })}
         />
       ))}
 

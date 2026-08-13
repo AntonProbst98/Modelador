@@ -7,6 +7,11 @@
  * así que un mueble nunca conoce sus coordenadas reales.
  */
 
+import type { Finish } from "./palette";
+
+/** Acabado de la pieza. Si falta, se deduce del color. */
+type WithFinish = { finish?: Finish };
+
 export type Part =
   | {
       k: "box";
@@ -23,7 +28,7 @@ export type Part =
       opacity?: number;
       /** proyecta sombra; apágalo en tapetes y placas delgadas */
       cast?: boolean;
-    }
+    } & WithFinish
   | {
       k: "cyl";
       /** radio superior */
@@ -40,8 +45,8 @@ export type Part =
       seg?: number;
       opacity?: number;
       cast?: boolean;
-    }
-  | { k: "sphere"; r: number; x: number; y: number; z: number; c: string };
+    } & WithFinish
+  | ({ k: "sphere"; r: number; x: number; y: number; z: number; c: string } & WithFinish);
 
 /** Caja. Orden: medidas, centro, color. */
 export const b = (
